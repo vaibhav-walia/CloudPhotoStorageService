@@ -1,27 +1,26 @@
 
-function start(port,route,handle){
+function start(port,route,handle,args){
         var http = require("http"),
         mongodb = require('mongodb'),
         url = require("url");
-        var dbServer = new mongodb.Server('127.0.0.1',27017);
+        var uri ="mongodb://"+args[0]+":"+args[1]+"@ds051833.mongolab.com:51833/cloudphotostorage";
+//        var dbServer = new mongodb.Server(uri);
         //var photos;
-new mongodb.Db('CloudPhotoStorage',dbServer).open(function(err,client){
-       if(err){
+        mongodb.MongoClient.connect(uri,function(err,db){
+        if(err){
+          console.log(err.message);
           throw err;
-       }
-       else{
+        }
+        else{
           console.log('connected to mongodb');
-          var pictures = client.collection('test2');
+          var pictures = db.collection('photostore');
           http.createServer(function(request,response){
           var path = url.parse(request.url).pathname;
-//          console.log("request for "+path+" received");
           route(handle,path,request,response,pictures);
           response.writeHead(200,{"Content-Type":"text/plain"});
-         // response.write("It Works!");
-          //response.end();
           }).listen(port);
           console.log("server has started listening on port "+port);
-       } 
-});
+         }
+       });
 }
 exports.start = start;                                          

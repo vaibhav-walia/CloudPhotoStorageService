@@ -15,7 +15,7 @@ function start(request,response,pictures){
   'content="text/html; charset=UTF-8" />'+
   '</head>'+
   '<body>'+
-  '<form action="/upload?album="album2"" enctype="multipart/form-data" '+
+  '<form action="/upload?album=\"album2\" enctype="multipart/form-data" '+
   'method="post">'+
   '<input type="file" name="upload" multiple="multiple">'+
   '<input type="submit" value="Upload file" />'+
@@ -45,10 +45,10 @@ function upload(request,response,pictures){
     fs.readFile(path,function(err,data){
      if(err){ response.writeHead(500,{"Content-Type":"application/json"}); throw(err); };
      var base64data = new Buffer(data).toString('base64');
-     pictures.find({album : album}).toArray(function(err,data){
+     pictures.findOne({album : album},(function(err,data){
      console.log("Error : "+err);
      console.log("Album :"+data);
-     if(!data || data.length<1){
+     if(!data){//||data.length<1){
       var toInsert = {
                      album : album,
                      pictures : [{base64Img : base64data,filename : filename}],
@@ -56,24 +56,24 @@ function upload(request,response,pictures){
        console.log(toInsert);
        pictures.insert(toInsert,function(err,data){
        response.writeHead(201,{"Content-Type":"application/json"});
-       var toret = "{ \"album\" :\""+album+"\", \"filename\" : \""+filename+"\", \"url\" : \"/show?album='"+album+"'&filename='"+filename+"'\"}";
+       var toret = "{ \"album\" :"+ album+", \"filename\" : "+filename+", \"url\" : /show?album="+album+"&filename="+filename+"}";
        response.end(toret);
       });
      }
      else{
-         console.log(data[0]);
+         console.log(data);
          console.log("here");
-         var pics = data[0].pictures;
+         var pics = data.pictures;
          pics.push({base64Img : base64data,filename : filename});
          pictures.update({ album : album },{album:album,pictures:pics},function(err,data){
          if(err){response.writeHead(500,{"Content-Type":"application/json"}); throw(err);  };
          console.log(data);
          response.writeHead(201,{"Content-Type":"application/json"});
-         var toret = "{ \"album\" :\""+album+"\", \"filename\" : \""+filename+"\", \"url\" : \"/show?album='"+album+"'&filename='"+filename+"'\"}";
+         var toret = "{ \"album\" :"+album+", \"filename\" : "+filename+", \"url\" : /show?album="+album+"&filename="+filename+"}";
          response.end(toret);
          });
     }  
-    });
+    }));
     });
    }
    else{
@@ -97,27 +97,32 @@ function show(request,response,pictures){
  var query = url.parse(request.url,true).query;
  //console.log(query);
  //console.log(querystring.parse(request.url));
- var album = query["album"];
+ var Album = query["album"];
  var filename = query["filename"];
- console.log(album);
- if(!album || !filename) {
-   console.log("album :"+album+"\n"+"filename:"+filename);
+ console.log(Album);
+ if(!Album || !filename) {
+   console.log("album :"+Album+"\n"+"filename:"+filename);
    response.writeHead(400,{"Content-Type":"application/json"}); 
    response.end();
  }
  else{
-        pictures.find({album : album}).toArray(function(err,albums){
- 		console.log(err)
-                console.log(albums);
-        	console.log("picture:"+albums[0].pictures);
+//       console.log(pictures); 
+
+       pictures.findOne({album:Album},function(err,albums){
+ 		//console.log(err)
+               // console.log(albums.toArray()); 
+                console.log("!!Ye hai albums.pictures: " +albums.pictures);
+        	console.log("picture:"+albums.pictures);
        	        response.writeHead({"Content-Type":"text/html"});
        	        var body = "<html><body>";
       	        var images = "";
- 		var pictures = albums[0].pictures;
+ 		var pictures = albums.pictures;
  		var flag = ''; 
  		pictures.forEach(function(pic){
   			//var imageStr = JSON.stringify(pic.filename);
-  			if(pic.filename == filename){
+  		       console.log("Filename in db: "+pic.filename);
+                       console.log("Filename in request"+filename);	
+                       if(pic.filename == filename){
   				flag = 'x';
   				var i = "<img src=data:image/*;base64,"+pic.base64Img+" /><br>";
   				images = i + images ;
@@ -130,7 +135,7 @@ function show(request,response,pictures){
  		else{
  			response.writeHead(200,{"Content-Type":"text/html"});
  			body = body+images+"<body></html>";
- 			response.end();
+ 			response.end(body);
  		} 
         });
  }

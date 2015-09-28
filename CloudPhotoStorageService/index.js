@@ -8,7 +8,7 @@ var requestHandlers = require("./requestHandlers");
 
 var handle = {};
 
-
+var args = process.argv.slice(2);
 
 handle["/"] = requestHandlers.start;
 
@@ -22,6 +22,6 @@ handle["/show"] = requestHandlers.show;
 
 
 
-server.start(8889,router.route,handle);
+server.start(8889,router.route,handle,args);
 
 
