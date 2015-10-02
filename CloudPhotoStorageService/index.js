@@ -1,5 +1,3 @@
-
-
 var server = require("./server");
 
 var router = require("./route");
@@ -20,8 +18,6 @@ handle["/upload"] = requestHandlers.upload;
 
 handle["/show"] = requestHandlers.show;
 
+handle["/showAll"] = requestHandlers.showAll;
 
-
-server.start(8889,router.route,handle,args);
-
-
+server.start(process.env.PORT, router.route, handle, args);
